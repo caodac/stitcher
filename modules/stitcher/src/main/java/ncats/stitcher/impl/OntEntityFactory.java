@@ -140,14 +140,18 @@ public class OntEntityFactory extends EntityRegistry {
                         
                     case "reason_for_obsolescence": // sigh.. from orphanet
                         { String text = obj.toString();
-                            if (text.startsWith("This class is deprecated")) {
-                                props.put("deprecated", "true");
+                            props.put("deprecated", "true");
+                            if (text.startsWith("This class is deprecated")
+                                || text.startsWith("use")) {
                                 int pos = text.indexOf("http://");
                                 if (pos > 0) {
-                                    int end = pos+7;
-                                    while (end < text.length()
-                                           && text.charAt(++end) != ' ')
-                                        ;
+                                    int end = pos+6;
+                                    while (++end < text.length()) {
+                                        char ch = text.charAt(end);
+                                        if (ch == ' '
+                                            || ch == '\'' || ch == '"')
+                                            break;
+                                    }
                                     Resource r = res.getModel().createResource
                                         (text.substring(pos, end));
                                     Object old = links.get("equivalentClass");
@@ -509,6 +513,9 @@ public class OntEntityFactory extends EntityRegistry {
                 String u = x.toUpperCase();
                 if (u.startsWith("SWISSPROT:")) {
                     useful.add("UNIPROTKB:"+u.substring(10));
+                }
+                else {
+                    useful.add(u);
                 }
             }
         }
@@ -1402,13 +1409,13 @@ public class OntEntityFactory extends EntityRegistry {
 
         if (!icds.isEmpty()) {
             for (String x : icds) {
-                if (x.startsWith("ICD10")) {
+                if (x.startsWith("ICD10") || x.startsWith("ICD-10")) {
                     int pos = x.indexOf(':');
                     if (pos > 0) {
                         xrefs.add("ICD10CM:"+x.substring(pos+1));
                     }
                 }
-                else if (x.startsWith("ICD9")) {
+                else if (x.startsWith("ICD9") || x.startsWith("ICD-9")) {
                     int pos = x.indexOf(':');
                     if (pos > 0) {
                         xrefs.add("ICD9CM:"+x.substring(pos+1));

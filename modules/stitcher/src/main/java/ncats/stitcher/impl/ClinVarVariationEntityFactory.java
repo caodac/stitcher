@@ -40,7 +40,7 @@ public class ClinVarVariationEntityFactory extends EntityRegistry {
     static final Logger logger =
         Logger.getLogger(ClinVarVariationEntityFactory.class.getName());
 
-    static final boolean LITERATURE_ONLY = false;
+    static final boolean LITERATURE_ONLY = true;
 
     class ClinVarVariationParser implements BiConsumer<XmlStream, byte[]> {
         final DocumentBuilder builder;
@@ -57,7 +57,8 @@ public class ClinVarVariationEntityFactory extends EntityRegistry {
                 Document doc = builder.parse(new ByteArrayInputStream (xml));
                 Entity ent = register (xs, doc, xml);
                 if (ent != null) {
-                    //if (++count > 4000)
+                    ++count;
+                    //if (count > 4000)
                     //    xs.setDone(true);
                 }
             }
@@ -187,7 +188,7 @@ public class ClinVarVariationEntityFactory extends EntityRegistry {
         data.put("gene_count", genes.size());
         data.put("genesymbols", genes.toArray(new String[0]));
         data.put("alleles", alleles.toArray(new Integer[0]));
-
+        
         values = (NodeList)xpath.evaluate(record+"SimpleAllele/ProteinChange",
                                           vcv, XPathConstants.NODESET);
         Set<String> proteins = new TreeSet<>();
@@ -279,12 +280,20 @@ public class ClinVarVariationEntityFactory extends EntityRegistry {
                         xf = "UMLS:"+id;
                         break;
                     case "OMIM":
-                        xf = "OMIM:"+id;
+                        { String t = r.getAttribute("Type");
+                            if ("Phenotypic series".equals(t)
+                                || "Allelic variant".equals(t)) {
+                            }
+                            else {
+                                xf = "OMIM:"+id;
+                            }
+                        }
                         break;
                     case "HP":
                     case "Human Phenotype Ontology":
+                    case "MONDO":
                         xf = id;
-                    break;
+                        break;
                     case "Office of Rare Diseases":
                         xf = String.format
                             ("GARD:%1$07d", Integer.parseInt(id));
@@ -352,7 +361,7 @@ public class ClinVarVariationEntityFactory extends EntityRegistry {
             return null;
         data.put("tests", gtrtests.toArray(new String[0]));
 
-        Entity ent = null;//register (data);
+        Entity ent = register (data);
         if (ent != null) {
             logger.info("++++++ "+String.format("%1$6d ", xs.getCount())
                         +data.get("accession")+": genes="+genes

@@ -59,26 +59,31 @@ public class OrphanetNaturalHistoryEntityFactory extends OrphanetEntityFactory {
     }
     
     void stitch (Entity d, Term t, String relname) throws Exception {
-        boolean stitched = true;
-        Entity[] entities = getEntities (t, "Orphanet");
-        if (entities.length == 0) {
-            // add new (transient) concept
-            Map<String, Object> data = new TreeMap<>();
-            data.put(Props.URI,
-                     "http://www.orpha.net/ORDO/Orphanet_"+t.orphaNumber);
-            data.put("notation", "Orphanet:"+t.orphaNumber);
-            data.put("label", t.name);
-            ncats.stitcher.Entity ent = register (data);
-            //ent.addLabel(AuxNodeType.TRANSIENT);
-            ent.addLabel("S_ORDO_ORPHANET"); // manually add this
-            entities = new Entity[]{ent};
+        if (t.orphaNumber != null) {
+            Entity[] entities = getEntities (t, "Orphanet");
+            if (entities.length == 0) {
+                // add new (transient) concept
+                Map<String, Object> data = new TreeMap<>();
+                data.put(Props.URI,
+                         "http://www.orpha.net/ORDO/Orphanet_"+t.orphaNumber);
+                data.put("notation", "Orphanet:"+t.orphaNumber);
+                data.put("label", t.name);
+                ncats.stitcher.Entity ent = register (data);
+                //ent.addLabel(AuxNodeType.TRANSIENT);
+                ent.addLabel("S_ORDO_ORPHANET"); // manually add this
+                entities = new Entity[]{ent};
+            }
+            
+            Map<String, Object> attrs = new TreeMap<>();
+            attrs.put(NAME, relname);
+            attrs.put(SOURCE, source.getKey());
+            for (Entity e : entities)
+                d.stitch(e, R_rel, "Orphanet:"+t.orphaNumber, attrs);
         }
-
-        Map<String, Object> attrs = new TreeMap<>();
-        attrs.put(NAME, relname);
-        attrs.put(SOURCE, source.getKey());
-        for (Entity e : entities)
-            d.stitch(e, R_rel, "Orphanet:"+t.orphaNumber, attrs);
+        else {
+            // newer orpha data doesn't have orphaNumber 
+            d.addLabel(t.name);
+        }
     }
     
     int stitch (NaturalHistory nh) throws Exception {
@@ -176,14 +181,23 @@ public class OrphanetNaturalHistoryEntityFactory extends OrphanetEntityFactory {
                     break;
 
                 case "AverageAgeOfOnset":
+                    if (term.orphaNumber == null) {
+                        term.name = tag+":"+term.name;
+                    }
                     nh.onsets.push(term);
                     break;
 
                 case "AverageAgeOfDeath":
+                    if (term.orphaNumber == null) {
+                        term.name = tag+":"+term.name;
+                    }
                     nh.deaths.push(term);
                     break;
 
                 case "TypeOfInheritance":
+                    if (term.orphaNumber == null) {
+                        term.name = tag+":"+term.name;
+                    }
                     nh.inheritances.push(term);
                     break;
                 } // endswitch()

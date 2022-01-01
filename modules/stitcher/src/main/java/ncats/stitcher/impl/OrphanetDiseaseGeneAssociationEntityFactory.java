@@ -39,6 +39,9 @@ public class OrphanetDiseaseGeneAssociationEntityFactory
         new QName (NS, "DisorderGeneAssociationType");
     static final QName DisorderGeneAssociationStatus =
         new QName (NS, "DisorderGeneAssociationStatus");
+    static final QName ExternalReference = new QName (NS, "ExternalReference");
+    static final QName Source = new QName (NS, "Source");
+    static final QName Reference = new QName (NS, "Reference");
 
     static class DisorderGeneAssociation extends Term {
         public Set<Long> pmids = new TreeSet<>();
@@ -102,6 +105,19 @@ public class OrphanetDiseaseGeneAssociationEntityFactory
         return genes;
     }
 
+    List<Entity> getOrphanetGenes (List<Entity> genes, String symbol) {
+        if (genes == null)
+            genes = new ArrayList<>();
+        for (Iterator<Entity> iter = find ("symbol", symbol);
+             iter.hasNext(); ) {
+            Entity e = iter.next();
+            if (e.is("S_ORDO_ORPHANET")) {
+                genes.add(e);
+            }
+        }
+        return genes;
+    }
+
     @Override
     protected int register (InputStream is) throws Exception {
         XMLEventReader events =
@@ -157,12 +173,19 @@ public class OrphanetDiseaseGeneAssociationEntityFactory
                     if (ents.length > 0) {
                         int asscnt = 0;
                         for (DisorderGeneAssociation ass : pd.associations) {
-                            List<Entity> genes = getOrphanetGenes
-                                (getGenes (null, ass.symbol), ass.orphaNumber);
+                            List<Entity> genes = new ArrayList<>();
+                            if (ass.orphaNumber != null) {
+                                getOrphanetGenes
+                                    (getGenes (genes, ass.symbol),
+                                     ass.orphaNumber);
+                            }
+                            else {
+                                getOrphanetGenes (genes, ass.symbol);
+                            }
                             
                             if (genes.isEmpty()) {
                                 logger.warning("** Gene "+ass.symbol
-                                               +" has not matching entities!");
+                                               +" has no matching entities!");
                             }
                             else {
                                 props.clear();
@@ -188,11 +211,12 @@ public class OrphanetDiseaseGeneAssociationEntityFactory
                 else if (Symbol.equals(qn)) {
                     pd.associations.peek().symbol = value;
                 }
-                else if (OrphaNumber.equals(qn)) {
+                else if (OrphaCode.equals(qn) || OrphaNumber.equals(qn)) {
                     if (Disorder.equals(pn))
                         pd.orphaNumber = Integer.parseInt(value);
                     else if (Gene.equals(pn)) {
-                        pd.associations.peek().orphaNumber = Integer.parseInt(value);
+                        pd.associations.peek().orphaNumber =
+                            Integer.parseInt(value);
                     }
                 }
                 else if (Name.equals(qn)) {

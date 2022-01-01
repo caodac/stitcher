@@ -5,7 +5,7 @@ version="v`date +%Y%m%d`"
 out="ncatskg-$version.db"
 cache="cache=hash.db"
 
-owl_path="owl-202109"
+owl_path="/zpool/data"
 orphclass="orphanet_classifications"
 orpha="orpha"
 hpo="hpo"
@@ -14,6 +14,7 @@ monogenic="data/conf/monogenic.conf"
 medgen="medgen"
 #clinvar if available
 clinvar="clinvar/ClinVarVariationRelease_00-latest.xml.gz"
+newborn="${owl_path}/newbornscreeningcodes-1.0.xml"
 genereviews="gene_NBK1116"
 #this might be too much right now
 ppi="ppi/BIOGRID-MV-Physical-3.5.172.mitab.txt.gz"
@@ -141,6 +142,10 @@ fi
 #load gene reviews if avaiable
 if test -d $genereviews; then
     sbt $opts stitcher/"runMain ncats.stitcher.impl.GeneReviewsEntityFactory $out $genereviews"
+fi
+
+if test -f $newborn; then
+    sbt $opts stitcher/"runMain ncats.stitcher.impl.NewbornScreeningEntityFactory $out $newborn"
 fi
 
 #load PPI if available
