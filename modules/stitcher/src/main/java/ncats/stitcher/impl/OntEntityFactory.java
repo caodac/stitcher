@@ -218,7 +218,11 @@ public class OntEntityFactory extends EntityRegistry {
         public String toString () {
             StringBuilder sb = new StringBuilder ();
             sb.append((ignore ? "-":"+")+"> ");
-            if (isClass()) sb.append(resource.getLocalName()+" "+uri);
+            if (isClass()) {
+                sb.append(resource.getLocalName()+" "+uri);
+                if (!uri.equals(resource.getURI()))
+                    sb.append(" ["+resource.getURI()+"]");
+            }
             else if (isAxiom()) sb.append("Axiom "+resource.getId());
             else sb.append(type+" "+resource.toString());
             sb.append("\n...properties\n");
@@ -363,6 +367,11 @@ public class OntEntityFactory extends EntityRegistry {
                 if (ns.equals("SNOWMEDCT"))
                     ns = ns+"_US";
                 uri = OBO_URI+ns+"_"+id;
+            }
+            else if (uri.startsWith("http://ncicb.nci.nih.gov")) {
+                String[] toks = uri.split("#");
+                String id = toks[toks.length-1];
+                uri = OBO_URI+"NCIT_"+id;
             }
         }
         else if (uri == null) {
@@ -556,7 +565,6 @@ public class OntEntityFactory extends EntityRegistry {
             obj = data.remove("notation");
             if (obj != null) {
                 data.put("notation", map (obj, a -> "NCIT:"+a));
-                data.put("uri", OBO_URI+"NCIT_"+obj);
             }
         }
         else if (ontology.resource != null
